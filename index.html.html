@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>안동-대구 1박 2일 최종 연계 여정 가이드</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Leaflet.js Map Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col md:flex-row overflow-hidden">
+
+    <!-- Sidebar / Control Panel -->
+    <div class="w-full md:w-[440px] bg-white shadow-2xl flex flex-col z-[1000] border-r border-slate-100 h-[50vh] md:h-screen">
+        <!-- Header -->
+        <div class="p-5 border-b border-slate-100 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md">
+            <div class="flex items-center gap-3">
+                <div class="p-2.5 bg-white/10 rounded-xl backdrop-blur-md">
+                    <i class="fa-solid fa-calendar-check text-2xl text-amber-400"></i>
+                </div>
+                <div>
+                    <h1 class="text-base font-bold tracking-tight">안동-대구 1박 2일 최종 일정</h1>
+                    <p class="text-xs text-slate-300 mt-0.5">AI중심학교 관련 학습공동체 협의회 여정</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Day Tabs (Adjusted for exact dates) -->
+        <div class="flex border-b border-slate-200 bg-slate-50 p-1">
+            <button id="btn-tab-day1" onclick="switchDay(1)" 
+                    class="flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 bg-white text-blue-600 shadow-sm border border-slate-200/50">
+                <i class="fa-solid fa-calendar-day mr-1 text-blue-500"></i> 1일차: 7.3.(금)
+            </button>
+            <button id="btn-tab-day2" onclick="switchDay(2)" 
+                    class="flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 text-slate-500 hover:text-red-600 hover:bg-white/50">
+                <i class="fa-solid fa-calendar-check mr-1 text-red-500"></i> 2일차: 7.4.(토)
+            </button>
+        </div>
+
+        <!-- Journey Summary Panel -->
+        <div id="summary-panel" class="bg-slate-900 text-white p-4 flex flex-col gap-1 shadow-inner">
+            <!-- Day 1 Summary -->
+            <div id="summary-day1" class="space-y-1">
+                <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">1일차 일정 개요 (금요일)</div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-extrabold text-blue-400">12:00 ~ 21:00</span>
+                    <span class="text-xs text-slate-300">(화원고 ➔ 안동고 ➔ 경국대 ➔ 숙소 ➔ 협의회)</span>
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-300 mt-1 pt-1 border-t border-slate-800">
+                    <span>이동 거리: <strong class="text-white">약 122.5 km</strong></span>
+                    <span>직선 합산: <strong class="text-white" id="dist-day1">0.0 km</strong></span>
+                </div>
+            </div>
+            
+            <!-- Day 2 Summary -->
+            <div id="summary-day2" class="space-y-1 hidden">
+                <div class="text-[10px] uppercase tracking-wider text-slate-400 font-bold">2일차 일정 개요 (토요일)</div>
+                <div class="flex items-baseline gap-1">
+                    <span class="text-xl font-extrabold text-red-400">10:00 ~ 16:00</span>
+                    <span class="text-xs text-slate-300">(호텔출발 ➔ 월영교 ➔ 구시장 찜닭/맘모스 ➔ 화원고)</span>
+                </div>
+                <div class="flex justify-between items-center text-xs text-slate-300 mt-1 pt-1 border-t border-slate-800">
+                    <span>이동 거리: <strong class="text-white">약 110.0 km</strong></span>
+                    <span>직선 합산: <strong class="text-white" id="dist-day2">0.0 km</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location List & Timeline Container -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4">
+            <!-- DAY 1 TIMELINE LIST -->
+            <div id="timeline-day1" class="space-y-3">
+                <!-- STEP 1-1: Departure -->
+                <div id="card-day1-start" onclick="focusLocation('day1-start')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">12:00 ~ 14:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">화원고등학교 ➔ 안동고등학교</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>승용차 이동 (약 101km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span class="text-blue-600 font-bold">1단계</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-2: Andong High Study -->
+                <div id="card-andong-high" onclick="focusLocation('andong-high')" 
+                     class="p-3.5 bg-slate-50 hover:bg-blue-50/50 border border-slate-200 hover:border-blue-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">탐방</span>
+                        <span class="text-[11px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.5 rounded">14:00 ~ 15:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2 group-hover:text-blue-600 transition-colors">안동고등학교 탐방</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-graduation-cap mr-1 text-blue-500"></i>경북 안동시 강남로 550</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>공립고 탐방</strong></span>
+                        <span>직선거리: <strong class="text-blue-600" id="dist-leg1">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-3: Move to GKNU -->
+                <div id="card-day1-move2" onclick="focusLocation('gknu')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">15:00 ~ 15:20</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">안동고 ➔ 국립경국대학교</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>강남로 & 경동로 경유 이동 (6.5km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span class="text-blue-600 font-bold">2단계</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-4: GKNU Study -->
+                <div id="card-gknu" onclick="focusLocation('gknu')" 
+                     class="p-3.5 bg-slate-50 hover:bg-indigo-50/50 border border-slate-200 hover:border-indigo-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded-md">탐방</span>
+                        <span class="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">15:20 ~ 16:20</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2 group-hover:text-indigo-600 transition-colors">국립경국대학교 탐방 (입학처)</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-building-columns mr-1 text-indigo-500"></i>경북 안동시 경동로 1375</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>대학 입학정책 및 고교연계 탐색</strong></span>
+                        <span>직선거리: <strong class="text-indigo-600" id="dist-leg2">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-5: Move to Grand Hotel -->
+                <div id="card-gknu-to-hotel" onclick="focusLocation('grand-hotel')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">16:20 ~ 16:50</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">국립경국대학교 ➔ 안동 그랜드호텔</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>경동로 & 관광단지로 경유 (7.2km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span class="text-blue-600 font-bold">3단계</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-6: Check-in Hotel -->
+                <div id="card-grand-hotel" onclick="focusLocation('grand-hotel')" 
+                     class="p-3.5 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 hover:border-amber-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">숙소</span>
+                        <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">16:50 ~ 18:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2 group-hover:text-amber-600 transition-colors">호텔 체크인</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-hotel mr-1 text-amber-500"></i>안동그랜드호텔 (관광단지로 346-14)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>체크인 및 정비</strong></span>
+                        <span>직선거리: <strong class="text-amber-600" id="dist-leg3">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-7: Move to Galbi Alley -->
+                <div id="card-hotel-to-galbi" onclick="focusLocation('galbi-alley')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">18:00 ~ 18:30</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">안동 그랜드호텔 ➔ 안동갈비골목</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>육사로 & 대안로 경유 이동 (약 5.8km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span class="text-blue-600 font-bold">4단계</span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-8: Study Conference & dinner (Galbi Alley) -->
+                <div id="card-galbi-alley" onclick="focusLocation('galbi-alley')" 
+                     class="p-3.5 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md">식사</span>
+                        <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">18:30 ~ 20:30</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2 group-hover:text-emerald-600 transition-colors">학습공동체 협의회 (저녁 식사)</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-utensils mr-1 text-emerald-500"></i>안동갈비골목 (경북 안동시 대안로 일원)</p>
+                    <div class="text-[10px] text-slate-600 font-medium bg-emerald-50/50 p-2 rounded-lg mt-2">
+                        💡 AI중심학교 관련 학습공동체 협의회 세션 진행
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>식사 병행</strong></span>
+                        <span>직선거리: <strong class="text-emerald-600" id="dist-leg4">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-9: Back to Hotel -->
+                <div id="card-hotel-return" onclick="focusLocation('hotel-return')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">20:30 ~ 21:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">안동갈비골목 ➔ 안동그랜드호텔 복귀</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car-rear mr-1 text-slate-400"></i>호텔 복귀 이동 (약 5.8km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span>직선거리: <strong class="text-slate-600" id="dist-leg5">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 1-10: Night sleep -->
+                <div id="card-hotel-sleep" onclick="focusLocation('hotel-return')" 
+                     class="p-3.5 bg-slate-50 hover:bg-amber-50/50 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">숙소</span>
+                        <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">21:00 ~</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">휴식 및 취침</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-moon mr-1 text-amber-500"></i>안동그랜드호텔 투숙</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>휴식 및 취침</strong></span>
+                        <span class="text-blue-600 font-bold">완료</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- DAY 2 TIMELINE LIST -->
+            <div id="timeline-day2" class="space-y-3 hidden">
+                <!-- STEP 2-1: Breakfast & Walk -->
+                <div id="card-day2-morning" onclick="focusLocation('grand-hotel-day2')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded-md">숙소</span>
+                        <span class="text-[11px] font-bold text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded">~ 10:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">산책 및 조식</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-coffee mr-1 text-amber-500"></i>안동그랜드호텔 내 조식 이용 및 정리</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>조식 및 체크아웃 준비</strong></span>
+                        <span class="text-red-600 font-bold">시작</span>
+                    </div>
+                </div>
+
+                <!-- STEP 2-2: Move to Woryeonggyo -->
+                <div id="card-day2-move1" onclick="focusLocation('woryeonggyo')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">10:00 ~ 10:20</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">안동 그랜드호텔 ➔ 월영교</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>관광단지로 & 민속촌길 경유 (약 2.1km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span>직선거리: <strong class="text-slate-600" id="dist-leg2-1">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 2-3: Woryeonggyo & Cafe -->
+                <div id="card-woryeonggyo" onclick="focusLocation('woryeonggyo')" 
+                     class="p-3.5 bg-slate-50 hover:bg-red-50/40 border border-slate-200 hover:border-red-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md">산책</span>
+                        <span class="text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">10:20 ~ 12:30</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">월영교 산책 및 구름에396카페</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-person-walking mr-1 text-red-500"></i>경북 안동시 상아동 569 / 민속촌길 190</p>
+                    <div class="text-[10px] text-slate-600 bg-slate-100 p-2 rounded-lg mt-2">
+                        🌳 국내 최장 목조 인도교 월영교 산책 후, 고즈넉한 전통 한옥 리조트 내 구름에396 북카페에서 여유로운 차 한 잔
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>산책 및 카페 이용</strong></span>
+                        <span>직선거리: <strong class="text-red-600" id="dist-leg2-2">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 2-4: Move to Market -->
+                <div id="card-day2-move2" onclick="focusLocation('gusijang')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">12:30 ~ 13:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">구름에396카페 ➔ 안동구시장</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car mr-1 text-slate-400"></i>도심 방면 이동 (약 3.8km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span>직선거리: <strong class="text-slate-600" id="dist-leg2-3">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 2-5: Jjimdak Lunch & Mammoth Bakery -->
+                <div id="card-gusijang" onclick="focusLocation('gusijang')" 
+                     class="p-3.5 bg-slate-50 hover:bg-emerald-50/50 border border-slate-200 hover:border-emerald-300 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md">식사</span>
+                        <span class="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded">13:00 ~ 14:30</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2 group-hover:text-emerald-600 transition-colors">안동구시장 찜닭식당 및 맘모스베이커리</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-utensils mr-1 text-emerald-500"></i>안동구시장 번영길 10 / 문화광장길 34</p>
+                    <div class="text-[10px] text-slate-600 bg-emerald-50/50 p-2 rounded-lg mt-2">
+                        🍗 원조 찜닭골목 점심 식사 후, 유명한 맘모스베이커리로 도보 이동하여 시그니처 크림치즈빵 등 구매
+                    </div>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>식사 및 제과 구매</strong></span>
+                        <span>직선거리: <strong class="text-emerald-600" id="dist-leg2-4">0.0km</strong></span>
+                    </div>
+                </div>
+
+                <!-- STEP 2-6: Return to Hwawon High -->
+                <div id="card-hwawon-return" onclick="focusLocation('hwawon-return')" 
+                     class="p-3.5 bg-slate-50 hover:bg-slate-100/70 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm">
+                    <div class="flex justify-between items-start">
+                        <span class="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md">이동</span>
+                        <span class="text-[11px] font-bold text-red-600 bg-red-50 px-1.5 py-0.5 rounded">14:30 ~ 16:00</span>
+                    </div>
+                    <h2 class="text-sm font-bold text-slate-800 mt-2">안동구시장 ➔ 화원고등학교</h2>
+                    <p class="text-[11px] text-slate-500 mt-1"><i class="fa-solid fa-car-rear mr-1 text-slate-400"></i>중앙고속도로 남안동IC 경유 (약 102km)</p>
+                    <div class="text-[10px] text-slate-400 mt-2 flex justify-between border-t border-slate-100 pt-2">
+                        <span>비고: <strong>이동</strong></span>
+                        <span>직선거리: <strong class="text-red-600" id="dist-leg2-5">0.0km</strong></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- View Action Panel -->
+            <div class="p-4 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
+                <h3 class="text-xs font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-map-marked-alt text-emerald-600"></i> 최적 시야 조정
+                </h3>
+                <p class="text-[11px] text-emerald-600/80 mt-1">현재 일차의 모든 동선이 지도에 한눈에 보이도록 화면 비율을 자동으로 맞춥니다.</p>
+                <button onclick="fitAllActive()" class="mt-3 w-full py-2 px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-maximize"></i> 전체 노선 화면 맞춤
+                </button>
+            </div>
+        </div>
+
+        <!-- Footer Info -->
+        <div class="p-3 border-t border-slate-100 bg-slate-50 text-[10px] text-slate-400 text-center">
+            &copy; 2026 안동-대구 학습공동체 1박 2일 최종 매핑 서비스
+        </div>
+    </div>
+
+    <!-- Map View Area -->
+    <div class="flex-1 relative h-1/2 md:h-screen">
+        <div id="map" class="w-full h-full"></div>
+        
+        <!-- Legend Overlay on Map -->
+        <div class="absolute bottom-4 right-4 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg z-[1000] text-xs space-y-2 border border-slate-200/50 max-w-[280px] md:max-w-xs">
+            <p class="font-bold text-slate-800 border-b border-slate-100 pb-1.5 mb-1 flex items-center gap-1.5">
+                <i class="fa-solid fa-circle-info text-indigo-600"></i> 1박 2일 노선 안내
+            </p>
+            
+            <!-- Day 1 Legend Group -->
+            <div id="legend-day1-group" class="space-y-1">
+                <p class="text-[10px] font-bold text-blue-600 uppercase">1일차 노선 (7월 3일)</p>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full items-center justify-center">1</span>
+                    <span class="text-slate-600">화원고등학교 (출발)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-blue-600 text-white text-[8px] font-bold rounded-full items-center justify-center">2</span>
+                    <span class="text-slate-600">안동고등학교 (탐방)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-indigo-600 text-white text-[8px] font-bold rounded-full items-center justify-center">3</span>
+                    <span class="text-slate-600">국립경국대학교 (탐방)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-amber-600 text-white text-[8px] font-bold rounded-full items-center justify-center">4</span>
+                    <span class="text-slate-600">안동그랜드호텔 (숙소)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-emerald-600 text-white text-[8px] font-bold rounded-full items-center justify-center">5</span>
+                    <span class="text-slate-600">안동갈비골목 (식사/회의)</span>
+                </div>
+                <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                    <span class="inline-block h-1 w-6 bg-blue-600 rounded-full"></span>
+                    <span class="text-slate-500 text-[10px]">1일차 전체 연결 노선 (청색)</span>
+                </div>
+            </div>
+
+            <!-- Day 2 Legend Group -->
+            <div id="legend-day2-group" class="space-y-1 hidden">
+                <p class="text-[10px] font-bold text-red-600 uppercase">2일차 노선 (7월 4일)</p>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-amber-600 text-white text-[8px] font-bold rounded-full items-center justify-center">1</span>
+                    <span class="text-slate-600">안동그랜드호텔 (출발)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-red-500 text-white text-[8px] font-bold rounded-full items-center justify-center">2</span>
+                    <span class="text-slate-600">월영교 & 구름에396</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-emerald-600 text-white text-[8px] font-bold rounded-full items-center justify-center">3</span>
+                    <span class="text-slate-600">안동구시장/맘모스</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="inline-flex w-4 h-4 bg-red-600 text-white text-[8px] font-bold rounded-full items-center justify-center">4</span>
+                    <span class="text-slate-600">화원고등학교 (복귀)</span>
+                </div>
+                <div class="flex items-center gap-2 pt-1 border-t border-slate-100">
+                    <span class="inline-block h-1.5 w-6 bg-red-600 rounded-full"></span>
+                    <span class="text-slate-500 text-[10px]">2일차 복귀 노선 (굵은 붉은선)</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Active display tab tracking (1 or 2)
+        let activeDay = 1;
+
+        // Fully updated GPS database corresponding to user's final itinerary
+        const locations = {
+            // Day 1
+            'day1-start': { name: '화원고등학교 (출발)', coords: [35.8028, 128.4985], color: '#ef4444', icon: 'fa-play', seq: '1', marker: null },
+            'andong-high': { name: '안동고등학교', coords: [36.54924, 128.73686], color: '#2563eb', icon: 'fa-graduation-cap', seq: '2', marker: null },
+            'gknu': { name: '국립경국대학교 안동캠퍼스', coords: [36.54316, 128.79632], color: '#4f46e5', icon: 'fa-building-columns', seq: '3', marker: null },
+            'grand-hotel': { name: '안동그랜드호텔', coords: [36.57948, 128.76941], color: '#d97706', icon: 'fa-hotel', seq: '4', marker: null },
+            'galbi-alley': { name: '안동갈비골목', coords: [36.5641, 128.7235], color: '#10b981', icon: 'fa-utensils', seq: '5', marker: null },
+            'hotel-return': { name: '안동그랜드호텔 (복귀)', coords: [36.57948, 128.76941], color: '#64748b', icon: 'fa-bed', seq: '6', marker: null },
+            
+            // Day 2
+            'grand-hotel-day2': { name: '안동그랜드호텔', coords: [36.57948, 128.76941], color: '#d97706', icon: 'fa-hotel', seq: '1', marker: null },
+            'woryeonggyo': { name: '월영교 (구름에396카페)', coords: [36.5762, 128.7621], color: '#ef4444', icon: 'fa-person-walking', seq: '2', marker: null },
+            'gusijang': { name: '안동구시장 (찜닭/맘모스)', coords: [36.5647, 128.7291], color: '#10b981', icon: 'fa-utensils', seq: '3', marker: null },
+            'hwawon-return': { name: '화원고등학교 (복귀)', coords: [35.8028, 128.4985], color: '#dc2626', icon: 'fa-house', seq: '4', marker: null }
+        };
+
+        // Initialize Leaflet Map object
+        const map = L.map('map', {
+            zoomControl: false
+        }).setView([36.190, 128.630], 9);
+
+        // Add Zoom Control to the top-right corner
+        L.control.zoom({
+            position: 'topright'
+        }).addTo(map);
+
+        // Standard map tile layout (Voyager Theme by CARTO)
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+            maxZoom: 20
+        }).addTo(map);
+
+        // Custom interactive divIcon creator for Leaflet Markers
+        function createSequentialMarkerIcon(color, text, iconClass, seq, extraText = '') {
+            const timeBadge = extraText ? `<div class="bg-slate-800 text-white px-1.5 py-0.5 rounded text-[8px] mt-0.5 font-bold flex items-center gap-0.5"><i class="fa-solid fa-clock"></i> ${extraText}</div>` : '';
+            return L.divIcon({
+                className: 'custom-div-icon',
+                html: `
+                    <div class="flex flex-col items-center select-none" style="transform: translate(0px, -20px);">
+                        <div class="flex flex-col items-center bg-white px-2.5 py-0.5 rounded-md shadow-md border border-slate-200 text-[10px] font-bold text-slate-800 whitespace-nowrap mb-1">
+                            <span class="flex items-center gap-1">
+                                <span class="w-3.5 h-3.5 bg-slate-800 text-white rounded-full flex items-center justify-center text-[7px]">${seq}</span>
+                                ${text}
+                            </span>
+                            ${timeBadge}
+                        </div>
+                        <div class="w-7 h-7 rounded-full flex items-center justify-center border-2 border-white shadow-lg relative" style="background-color: ${color};">
+                            <i class="fa-solid ${iconClass} text-white text-[10px]"></i>
+                        </div>
+                        <div class="w-1 h-1 -mt-0.5 rounded-full" style="background-color: ${color};"></div>
+                    </div>
+                `,
+                iconSize: [30, 42],
+                iconAnchor: [15, 42]
+            });
+        }
+
+        // Day 1 Markers
+        locations['day1-start'].marker = L.marker(locations['day1-start'].coords, {
+            icon: createSequentialMarkerIcon(locations['day1-start'].color, '화원고등학교 (출발)', 'fa-play', '1', '12:00 출발')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded">1일차 시작</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">화원고등학교</h4>
+                <p class="text-xs text-slate-600 mt-1">대구광역시 달성군 화원읍 화원로 10</p>
+            </div>
+        `);
+
+        locations['andong-high'].marker = L.marker(locations['andong-high'].coords, {
+            icon: createSequentialMarkerIcon(locations['andong-high'].color, '안동고등학교', 'fa-graduation-cap', '2', '14:00 도착')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded">1일차 탐방</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">안동고등학교</h4>
+                <p class="text-xs text-slate-600 mt-1">공립 자율고 탐방 (14:00 ~ 15:00)</p>
+            </div>
+        `);
+
+        locations['gknu'].marker = L.marker(locations['gknu'].coords, {
+            icon: createSequentialMarkerIcon(locations['gknu'].color, '국립경국대', 'fa-building-columns', '3', '15:20 도착')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded">1일차 대학탐방</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">국립경국대학교 안동캠퍼스</h4>
+                <p class="text-xs text-slate-600 mt-1">입학처 고교연계 탐색 (15:20 ~ 16:20)</p>
+            </div>
+        `);
+
+        locations['grand-hotel'].marker = L.marker(locations['grand-hotel'].coords, {
+            icon: createSequentialMarkerIcon(locations['grand-hotel'].color, '안동그랜드호텔', 'fa-hotel', '4', '16:50 도착')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">숙박시설</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">안동그랜드호텔</h4>
+                <p class="text-xs text-slate-600 mt-1">호텔 체크인 및 개인 정비 (16:50 ~ 18:00)</p>
+            </div>
+        `);
+
+        locations['galbi-alley'].marker = L.marker(locations['galbi-alley'].coords, {
+            icon: createSequentialMarkerIcon(locations['galbi-alley'].color, '안동갈비골목', 'fa-utensils', '5', '18:30 식사/회의')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">학습공동체 협의회</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">안동 갈비골목</h4>
+                <p class="text-xs text-slate-600 mt-1">AI중심학교 관련 학습공동체 협의회 (18:30 ~ 20:30)</p>
+            </div>
+        `);
+
+        // Day 2 Markers
+        locations['grand-hotel-day2'].marker = L.marker(locations['grand-hotel-day2'].coords, {
+            icon: createSequentialMarkerIcon(locations['grand-hotel-day2'].color, '안동그랜드호텔 (출발)', 'fa-hotel', '1', '10:00 출발')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded">2일차 출발</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">안동그랜드호텔</h4>
+                <p class="text-xs text-slate-600 mt-1">조식 및 산책 후 오전 10:00 정각 출발</p>
+            </div>
+        `);
+
+        locations['woryeonggyo'].marker = L.marker(locations['woryeonggyo'].coords, {
+            icon: createSequentialMarkerIcon(locations['woryeonggyo'].color, '월영교 (구름에396)', 'fa-person-walking', '2', '10:20~12:30')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded">안동 힐링</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">월영교 & 구름에396</h4>
+                <p class="text-xs text-slate-600 mt-1">나무 인도교 산책 및 한옥 북카페 휴식</p>
+            </div>
+        `);
+
+        locations['gusijang'].marker = L.marker(locations['gusijang'].coords, {
+            icon: createSequentialMarkerIcon(locations['gusijang'].color, '안동구시장 (찜닭/맘모스)', 'fa-utensils', '3', '13:00~14:30')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded">식사 및 베이킹</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">안동구시장 및 맘모스</h4>
+                <p class="text-xs text-slate-600 mt-1">점심 찜닭 식사 및 크림치즈빵 투어</p>
+            </div>
+        `);
+
+        locations['hwawon-return'].marker = L.marker(locations['hwawon-return'].coords, {
+            icon: createSequentialMarkerIcon(locations['hwawon-return'].color, '화원고등학교 (복귀)', 'fa-house', '4', '16:00 도착')
+        }).addTo(map).bindPopup(`
+            <div class="p-1">
+                <span class="px-1.5 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded">귀가 완료</span>
+                <h4 class="font-bold text-sm text-slate-800 mt-1">대구 화원고등학교</h4>
+                <p class="text-xs text-slate-600 mt-1">16:00 도착 및 전체 공식 일정 종료</p>
+            </div>
+        `);
+
+        // Day 1 Connection Path (Blue Theme)
+        const lineDay1 = L.polyline([
+            locations['day1-start'].coords,
+            locations['andong-high'].coords,
+            locations['gknu'].coords,
+            locations['grand-hotel'].coords,
+            locations['galbi-alley'].coords,
+            locations['grand-hotel'].coords // Return to hotel
+        ], {
+            color: '#3b82f6',
+            weight: 5,
+            opacity: 0.85
+        }).addTo(map);
+
+        // Day 2 Connection Path (Red Theme with Bold line)
+        const lineDay2 = L.polyline([
+            locations['grand-hotel-day2'].coords,
+            locations['woryeonggyo'].coords,
+            locations['gusijang'].coords,
+            locations['hwawon-return'].coords
+        ], {
+            color: '#dc2626',
+            weight: 8,
+            opacity: 0.9
+        }).addTo(map);
+
+
+        // Geographic coordinate distance (Haversine formula)
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = 
+                Math.sin(dLat/2) * Math.sin(dLat/2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return (R * c).toFixed(2);
+        }
+
+        // Compute and map Day 1 straight distance segments
+        const distLeg1 = calculateDistance(locations['day1-start'].coords[0], locations['day1-start'].coords[1], locations['andong-high'].coords[0], locations['andong-high'].coords[1]);
+        const distLeg2 = calculateDistance(locations['andong-high'].coords[0], locations['andong-high'].coords[1], locations['gknu'].coords[0], locations['gknu'].coords[1]);
+        const distLeg3 = calculateDistance(locations['gknu'].coords[0], locations['gknu'].coords[1], locations['grand-hotel'].coords[0], locations['grand-hotel'].coords[1]);
+        const distLeg4 = calculateDistance(locations['grand-hotel'].coords[0], locations['grand-hotel'].coords[1], locations['galbi-alley'].coords[0], locations['galbi-alley'].coords[1]);
+        const distLeg5 = calculateDistance(locations['galbi-alley'].coords[0], locations['galbi-alley'].coords[1], locations['grand-hotel'].coords[0], locations['grand-hotel'].coords[1]);
+
+        document.getElementById('dist-leg1').innerText = `${distLeg1} km`;
+        document.getElementById('dist-leg2').innerText = `${distLeg2} km`;
+        document.getElementById('dist-leg3').innerText = `${distLeg3} km`;
+        document.getElementById('dist-leg4').innerText = `${distLeg4} km`;
+        document.getElementById('dist-leg5').innerText = `${distLeg5} km`;
+
+        const sumDay1 = (parseFloat(distLeg1) + parseFloat(distLeg2) + parseFloat(distLeg3) + parseFloat(distLeg4) + parseFloat(distLeg5)).toFixed(2);
+        document.getElementById('dist-day1').innerText = `${sumDay1} km`;
+
+        // Compute and map Day 2 straight distance segments
+        const distLeg2_1 = calculateDistance(locations['grand-hotel-day2'].coords[0], locations['grand-hotel-day2'].coords[1], locations['woryeonggyo'].coords[0], locations['woryeonggyo'].coords[1]);
+        const distLeg2_2 = calculateDistance(locations['woryeonggyo'].coords[0], locations['woryeonggyo'].coords[1], locations['woryeonggyo'].coords[0], locations['woryeonggyo'].coords[1]); // internally adjacent
+        const distLeg2_3 = calculateDistance(locations['woryeonggyo'].coords[0], locations['woryeonggyo'].coords[1], locations['gusijang'].coords[0], locations['gusijang'].coords[1]);
+        const distLeg2_4 = calculateDistance(locations['gusijang'].coords[0], locations['gusijang'].coords[1], locations['gusijang'].coords[0], locations['gusijang'].coords[1]); // internally adjacent (Mammoth/Gusijang)
+        const distLeg2_5 = calculateDistance(locations['gusijang'].coords[0], locations['gusijang'].coords[1], locations['hwawon-return'].coords[0], locations['hwawon-return'].coords[1]);
+
+        document.getElementById('dist-leg2-1').innerText = `${distLeg2_1} km`;
+        document.getElementById('dist-leg2-2').innerText = `0.00 km (인접)`;
+        document.getElementById('dist-leg2-3').innerText = `${distLeg2_3} km`;
+        document.getElementById('dist-leg2-4').innerText = `0.15 km (도보)`;
+        document.getElementById('dist-leg2-5').innerText = `${distLeg2_5} km`;
+
+        const sumDay2 = (parseFloat(distLeg2_1) + parseFloat(distLeg2_3) + parseFloat(distLeg2_5)).toFixed(2);
+        document.getElementById('dist-day2').innerText = `${sumDay2} km`;
+
+
+        // Tab controller to switch between Day 1 and Day 2 viewstates
+        function switchDay(day) {
+            activeDay = day;
+            
+            const tab1 = document.getElementById('btn-tab-day1');
+            const tab2 = document.getElementById('btn-tab-day2');
+            const summaryDay1 = document.getElementById('summary-day1');
+            const summaryDay2 = document.getElementById('summary-day2');
+            const timelineDay1 = document.getElementById('timeline-day1');
+            const timelineDay2 = document.getElementById('timeline-day2');
+            const legendDay1Group = document.getElementById('legend-day1-group');
+            const legendDay2Group = document.getElementById('legend-day2-group');
+
+            if (day === 1) {
+                tab1.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 bg-white text-blue-600 shadow-sm border border-slate-200/50";
+                tab2.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 text-slate-500 hover:text-red-600 hover:bg-white/50";
+                
+                summaryDay1.classList.remove('hidden');
+                summaryDay2.classList.add('hidden');
+                timelineDay1.classList.remove('hidden');
+                timelineDay2.classList.add('hidden');
+                legendDay1Group.classList.remove('hidden');
+                legendDay2Group.classList.add('hidden');
+
+                lineDay1.setStyle({ opacity: 0.85, weight: 5 });
+                lineDay2.setStyle({ opacity: 0.2, weight: 3 });
+            } else {
+                tab2.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 bg-white text-red-600 shadow-sm border border-slate-200/50";
+                tab1.className = "flex-1 py-3 text-center text-xs font-bold rounded-xl transition-all duration-300 text-slate-500 hover:text-blue-600 hover:bg-white/50";
+                
+                summaryDay2.classList.remove('hidden');
+                summaryDay1.classList.add('hidden');
+                timelineDay2.classList.remove('hidden');
+                timelineDay1.classList.add('hidden');
+                legendDay2Group.classList.remove('hidden');
+                legendDay1Group.classList.add('hidden');
+
+                lineDay2.setStyle({ opacity: 0.9, weight: 8 });
+                lineDay1.setStyle({ opacity: 0.2, weight: 3 });
+            }
+
+            fitAllActive();
+        }
+
+        // Flying transitions focus mapping
+        function focusLocation(key) {
+            const loc = locations[key];
+            if (!loc) return;
+            
+            map.flyTo(loc.coords, 15, {
+                animate: true,
+                duration: 1.5
+            });
+            setTimeout(() => {
+                if (loc.marker) loc.marker.openPopup();
+            }, 1200);
+
+            // Reset Card UI Styling classes to default
+            const allCards = [
+                'day1-start', 'andong-high', 'day1-move2', 'gknu', 'gknu-to-hotel', 'grand-hotel', 'hotel-to-galbi', 'galbi-alley', 'hotel-return', 'hotel-sleep',
+                'day2-morning', 'day2-move1', 'woryeonggyo', 'day2-move2', 'gusijang', 'hwawon-return'
+            ];
+
+            allCards.forEach(id => {
+                const element = document.getElementById(`card-${id}`);
+                if (element) {
+                    element.className = "p-3.5 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                }
+            });
+
+            // Set Selected / Focused Active Card UI Styling
+            const activeCard = document.getElementById(`card-${key}`);
+            if (activeCard) {
+                if (key.includes('start') || key.includes('return') || key.includes('morning') || key.includes('move') || key.includes('sleep') || key.includes('to-')) {
+                    activeCard.className = "p-3.5 bg-red-50/20 border-2 border-red-500 ring-2 ring-red-100 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                } else if (key === 'andong-high') {
+                    activeCard.className = "p-3.5 bg-blue-50/20 border-2 border-blue-500 ring-2 ring-blue-100 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                } else if (key === 'gknu') {
+                    activeCard.className = "p-3.5 bg-indigo-50/20 border-2 border-indigo-500 ring-2 ring-indigo-100 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                } else if (key === 'grand-hotel' || key === 'grand-hotel-day2') {
+                    activeCard.className = "p-3.5 bg-amber-50/20 border-2 border-amber-500 ring-2 ring-amber-100 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                } else if (key === 'woryeonggyo' || key === 'gusijang' || key === 'galbi-alley') {
+                    activeCard.className = "p-3.5 bg-emerald-50/20 border-2 border-emerald-500 ring-2 ring-emerald-100 rounded-xl cursor-pointer transition-all duration-300 group shadow-sm relative";
+                }
+            }
+        }
+
+        // Fit map scope to cover entire route active coordinates
+        function fitAllActive() {
+            let targets = [];
+            if (activeDay === 1) {
+                targets = [
+                    locations['day1-start'].coords,
+                    locations['andong-high'].coords,
+                    locations['gknu'].coords,
+                    locations['grand-hotel'].coords,
+                    locations['galbi-alley'].coords
+                ];
+            } else {
+                targets = [
+                    locations['grand-hotel-day2'].coords,
+                    locations['woryeonggyo'].coords,
+                    locations['gusijang'].coords,
+                    locations['hwawon-return'].coords
+                ];
+            }
+            
+            const bounds = L.latLngBounds(targets);
+            map.fitBounds(bounds, {
+                padding: [50, 50],
+                maxZoom: 14
+            });
+        }
+
+        // Execute on DOM and components fully loaded
+        window.onload = function() {
+            switchDay(1); // Set default starting viewstate to Day 1
+        };
+    </script>
+</body>
+</html>
